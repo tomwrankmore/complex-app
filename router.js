@@ -8,4 +8,6 @@ router.get('/', userController.home)
 router.post('/register', userController.register)
 //post request from router runs register function from userController.js
 
+router.post('/login', userController.login)
+
 module.exports = router 

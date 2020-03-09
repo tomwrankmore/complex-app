@@ -1,7 +1,7 @@
-const usersCollection = require ('../db').collection("users")
+const usersCollection = require ('../db').collection("users")//module.exports was db so .collection looks inside it and users is the name of the collection
 const validator = require("validator")
 
-let User = function(data) {
+let User = function(data) {//when we instantiate User data = req.body or the request that was made. ie register, login etc.
   this.data = data
   this.errors = []
 }
@@ -15,7 +15,7 @@ User.prototype.cleanUp = function() {
   //get rid of any bogus properties, making sure no hackers embed new properties I guess?
   this.data = {
     username: this.data.username.trim().toLowerCase(),
-    email: this.data.email.trim().toLowerCase(),
+    email: this.data.email.trim().toLowerCase(),//trim removes whitespace
     password: this.data.password
   }
 }
@@ -29,6 +29,17 @@ User.prototype.validate = function() {
   if(this.data.password.length > 100) {this.errors.push("Password cannot excede 100 characters")}
   if(this.data.username.length > 0 && this.data.username.length < 3) {this.errors.push("Username must be at least 3 characters")}
   if(this.data.username.length > 30) {this.errors.push("Username cannot excede 30 characters")}
+}
+
+User.prototype.login = function(callback) {
+  this.cleanUp()
+  usersCollection.findOne({username: this.data.username}, (err, attemptedUser) => {
+    if(attemptedUser && attemptedUser.password == this.data.password) {
+      callback("Congrats")
+    } else {
+      callback("Invalid")
+    }
+  })
 }
 
 User.prototype.register = function() {
