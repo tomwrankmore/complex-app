@@ -31,14 +31,18 @@ User.prototype.validate = function() {
   if(this.data.username.length > 30) {this.errors.push("Username cannot excede 30 characters")}
 }
 
-User.prototype.login = function(callback) {
-  this.cleanUp()
-  usersCollection.findOne({username: this.data.username}, (err, attemptedUser) => {
-    if(attemptedUser && attemptedUser.password == this.data.password) {
-      callback("Congrats")
-    } else {
-      callback("Invalid")
-    }
+User.prototype.login = function() {
+  return new Promise((resolve, reject) => {
+    this.cleanUp()
+    usersCollection.findOne({username: this.data.username}).then((attemptedUser)=>{//if the findOne promise finds username, it passes it when it calls resolve, so we can recieve it by including the parameter within then parenthesis
+      if(attemptedUser && attemptedUser.password == this.data.password) {
+        resolve("Congrats")
+      } else {
+        reject("Invalid username/password")
+      }
+    }).catch(function() {
+      reject("Please try again later")
+    })
   })
 }
 
