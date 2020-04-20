@@ -1,0 +1,53 @@
+set post route in router.js /removeFollow/:username
+runs functions: 
+userController.mustBeLogged in &
+followController.removeFollow
+
+profileUser property comes from mustBeLogged function and is a snapshot of logged in users info.
+
+removeFollow instantiates follow = Follow passing in username of current profile page and logged in user.
+then call follow.delete()
+
+delete() returns promise, if it resolves and we deleted info from follows collection, we run .then add success flash to req.flash
+save session res.redirect to profile/ req.params.username 
+
+within Follow.js we make delete()
+all we change from create follow function is database action, instead of insertOne it's deleteOne
+
+When we call validate() from within delete function we pass ("delete") and when we call it in create we pass ("create")
+Set actual validate function to accept argument called (action)
+
+Within validate function:
+we make doesFollowAlreadyExist which runs findOne where followedId: matches our followedId property, which is set in validate function & authorId: matches this.authorId, which is passed in when we instantiate Follow from followController.js
+
+if current action == create
+  if(doesFollowAlreadyExist) -- if the findOne method finds matching document, this will evaluate to true
+  If a follow already exists and incoming request is trying to create another one, we want to push error onto our errors array.
+
+if action == delete, we check for the opposite, so if(!doesFollowAlreadyExist) -- fineOne doesn't find matching document ie you're not following them, you can't remove a follow. push error onto errors array.
+
+The above are both in doesFollowAlreadyExist.
+
+
+You should not be allowed to follow yourself:
+
+in Follow.js
+  if(this.followedId.equals(this.authorId)) {
+    this.errors.push("You cannot follow yourself dummy.")
+  }
+
+Hide button if you're viewing your own profile:
+userController.sharedProfileData
+isVisitorsProfile variable set to false 
+isVisitorsProfile = req.profileUser._id.equals(req.session.user._id)
+
+the mongoDB object id has a method called equals which will either return true or false
+
+add onto req object property called isVisitorsProfile set to local variable isVisitorsProfile which will now be true or false.
+now isVisitorsProfile is available to next function for this route which is:
+  profilePostsScreen
+when we res.render the template 'profile', add property 
+isVisitorsProfile: req.isVisitorsProfile
+to be used in profile.ejs.
+
+profileUser COMES FROM IFUSEREXISTS FUNCTION!!!

@@ -1,0 +1,44 @@
+Shared profile data function in userController is to be reused when sending requests on posts, followers and following from /profile pages
+It's function is to use the current profile id and the logged in user id to check if they're following them.
+
+
+ in router.js on /profile/:user route add as second function
+
+ sharedProfileData function exists in userController  
+ isFollowing is initially set to false
+ if (req.session.user) logged in ie user object exists
+ run Follow.isVisitorFollowing method
+ pass in (req.profileUser._id) which is on req object from ifUserExists function as well as req.visitorId from app.js, always available
+
+req.profileUser._id = id of the profile page that we're on.
+
+profileUser comes from reusablePostQuery
+
+ isVisitorFollowing returns true of false so set isFollowing to isVisitorFollowing
+ then add this onto req object req.isFollowing = isFollowing, local variable which is true or false based on isVisitorFollowing method
+ call next() to move onto next function
+ 
+Follow.isVisitorFollowing:
+takes in req.profileUser._id, req.visitorId as followedId & visitorId
+variable called followDoc = findOne method on followsCollection
+where followedId is the same as OUR followedId we passed in &
+where authorId is the same as OUR visitorId we passed in as mongoDb objectID like:
+  authorId: new ObjectID(this.authorId)
+
+if (followDoc) exists return true, else return false 
+
+So again:
+sharedProfileData function runs for ALL profile routes
+by default isFollowing is set to false
+but if current visitor is logged in ie if(req.session.user)
+we set is following to Follow.isVisitorFollowing to check to see is logged in user is following the current profile, returns true or false
+we store that value in req.isFollowing so that we can use it in the next() function in this route - profilePostsScreen()
+
+when we res.render('profile') in profilePostsScreen() pass in new data:
+  isFollowing: req.isFollowing which is true or false
+
+Now we can use true or false value to show either follow or unfollow button
+
+profile.ejs - if(user) - ie if user is logged in then inside that
+if - isFollowing is true - show unfollow button and change action to /removeFollow
+else - show follow button which runs addFollow 

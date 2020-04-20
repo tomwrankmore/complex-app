@@ -2,6 +2,8 @@ const express = require('express')
 const session = require('express-session')
 const MongoStore = require('connect-mongo')(session)
 const flash = require('connect-flash')
+const markdown = require('marked')
+const sanitizeHTML = require('sanitize-html')
 const app = express()
 
 let sessionOptions = session({
@@ -14,6 +16,29 @@ let sessionOptions = session({
 
 app.use(sessionOptions)
 app.use(flash())
+
+// We are telling Express to run this function for every request
+// We now have acces to user property from within any ejs template 
+//ie. user.avatar instead of adding properties 
+app.use(function(req, res, next) {
+  //Make out markdown function available from within EJS templates
+  res.locals.filterUserHTML = function(content) {
+    return sanitizeHTML(markdown(content), {allowedTags: ['p', 'br', 'ul', 'ol', 'li', 'bold', 'strong', 'i', 'em', 'h1','h2','h3','h4','h5','h6'], allowedAttributes: {}})
+  }
+
+  //make all error and success flash messages available from all templates
+  res.locals.errors = req.flash("errors")
+  res.locals.success = req.flash("success")
+
+  //make current user id available on the req object
+  // console.log(req.session)
+  if(req.session.user) {req.visitorId = req.session.user._id} else {req.visitorId = 0}
+
+  // make user session data available from within view templates
+  res.locals.user = req.session.user
+  next()
+})
+
 
 //require function executes file immediately but also returns whatever the file exports
 

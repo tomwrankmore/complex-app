@@ -1,0 +1,46 @@
+Start in views - profile.ejs
+form - button - follow - set action to /addFollow/<% profileUsername %>
+
+in router.js set up post request route for /addFollow
+we pass '/addFollow/:username' which means username will be available to function we call next as req.params.username 
+
+that function is followController.addFollow
+addFollow sets new instance of Follow.js to variable 'follow'
+passing in req.params.username & req.visitorId which is the logged in user from app.js
+
+Follow.js takes in followedUsername & authorId which are passed from followController.addFollow ie (req.params.username, req.visitorId)
+
+We create properties in Follow constructor function for followedUsername & authorId to be referenced in cleanup and validate.
+
+follow.create() --- create returns a promise in Follow.js
+if promise resolves, the .then we add flash message to the req object 'successfully followed..'
+
+Follow.create function:
+returns Promise which runs 
+- cleanup function
+- validate function
+
+    cleanup clears followedUsername/req.params.username if it isn't a string
+
+    validate creates variable called followedAccount set it to equal a findOne method in usersCollection (set at top of (Follow.js) 
+    Where username property in collection is a match with followedUsername/req.params.username
+    if (followedAccount) exists, ie findOne, found one, store the id of that doc
+    set property this.followedId = followedAccount._id, this is id of doc we found in database with findOne
+    else - pushes error onto errors array at the top.
+ 
+Back to Follow.create, async await on this.validate
+if there are no errors then: 
+  insertOne into followsCollection with properties followedId & authorId and resolve
+else: reject with this.errors array
+
+
+Back to followController.addFollow
+if create function resolves .then
+save session data, add flash message and redirect user to user's profile they just followed:
+  req.flash("success", `Succesfully followed ${req.params.username}`)
+  req.session.save(() => res.redirect(`/profile/${req.params.username}`))
+
+if promise doesn't resolve in .catch we run forEach on errors array set up in Follow.js with 'error' as currently indexed item, for each 'error' we create flash message. req.flash("errors", error) < this means add to the errors collection in mongoDB flash object, then add the error (item from errors array)
+
+after forEach finishes - save session and redirect to home.
+req.session.save(() => res.redirect('/'))

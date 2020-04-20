@@ -1,0 +1,26 @@
+Map of live search feature as a reminder:  
+In search.js document.querySelector(“.search-overlay”) 
+
+click event shows overlay div 
+
+key up event on search field run keypress handler function 
+
+sendRequest function uses axios on front end - post /search which returns a promise 
+
+axios passes {searchTerm: this.inputField.value} as property 
+
+router.js /search runs postController.search  
+
+postController.search runs Post.search passing in property req.body.searchTerm 
+
+Post.search returns a promise with async function >> 
+
+if searchTerm is a string, then create variable called posts = to Post.reusablePostQuery passing searchTerm 
+
+Post.search resolves with posts which is an array of author information so now the array posts is available to the .then function of postController.js and it responds with json(posts) for: sendRequest function which uses the word 'response' as it’s parameter to recieve posts array 
+
+sendRequest then runs renderResultsHTML passing in response.data into renderResultsHTML ‘posts’ parameter.  
+
+Therefore, 'posts' as an array from Post.reusablePostQuery is now available to the HTML to display search results 
+
+we run map on posts array with ‘post’ as our cycled to item in array and generate html with dynamic information ie post.author.username. 

@@ -3,9 +3,11 @@ const usersCollection = require ('../db').db().collection("users")//module.expor
 const validator = require("validator")
 const md5 = require('md5')
 
-let User = function(data) {//when we instantiate User data = req.body or the request that was made. ie register, login etc.
+let User = function(data, getAvatar) {//when we instantiate User data = req.body or the request that was made. ie register, login etc.
   this.data = data
   this.errors = []
+  if(getAvatar == undefined) { getAvatar = false }
+  if(getAvatar) { this.getAvatar() }
 }
 
 //before validation happens it clears out username field if it isn't a string so validation error will catch it for being blank
@@ -54,7 +56,8 @@ User.prototype.login = function() {
     this.cleanUp()
     usersCollection.findOne({username: this.data.username}).then((attemptedUser)=>{//if the findOne promise finds username, it passes it when it calls resolve, so we can recieve it by including the parameter within then parenthesis
       if(attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
-        //bcrypt compares inputted password with hashed version
+        //bcrypt hashes user inputted password and compares it with hashed version
+        this.data = attemptedUser//now we set data to the mongo object, I was missing this before, this is for avatar function below to have access to email add.
         this.getAvatar()
         // this populate a property called avatar on User object
         resolve("Congrats")
@@ -89,8 +92,37 @@ User.prototype.register = function() {
   })
 }
 
+
 User.prototype.getAvatar = function() {
-  this.avatar = `https://s.gravatar.com/avatar/${md5(this.data.email)}?s=128`
+  this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`
+}
+
+
+
+User.findByUserName = function(username) {
+  return new Promise(function(resolve, reject) {
+    if(typeof(username) != "string"){
+      reject()
+      return
+    } 
+    usersCollection.findOne({username: username}).then(function(userDoc){
+      if(userDoc) {
+        reducedUserDoc = new User(userDoc, true)//true value tells user to run avatar function automatically
+        reducedUserDoc = {
+          _id: reducedUserDoc.data._id,
+          username: reducedUserDoc.data.username,
+          avatar: reducedUserDoc.avatar//avatar is part of the User blueprint, not the incoming dats from userDoc, so it doesn't need .data in it
+        }
+        //we could have just resolved with entire user document but we restricted what gets send by feeding in data to User blueprint assiging these key value pairs. Not password etc.
+        resolve(reducedUserDoc)
+      } else {
+        reject()
+      }
+    }).catch(function(){
+      reject()
+    })
+  })
 }
 
 module.exports = User
+//module.exports is Node.js syntax
