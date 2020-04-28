@@ -1,0 +1,114 @@
+Browser based js thats will run after every key stroke.
+
+registrationForm.js exports class called RegistrationForm
+main.js imports it but only creates new instance of it if registration-form exists on the page.
+
+this.allFields grabs all elements in #registration-form with class of form-control. Returns an array of all elements with that class.
+
+insertValidationElements method runs for each on the array returned by all fields, with el parameter representing each of them.
+on each el we insert HTML after end, so after each form field. Alert message.
+
+----------------------
+
+in username field we add event listener for keyup which calls isDifferent method
+when we call isDifferent we pass in this.username and userNameHandler function to check the new value is different. 
+el = this.username.
+previousValue is set to empty string initially
+after every keyup on this.username we run isDifferent() which says if previousValue isn't the same as el.value - run handler()/this.usernameHandler
+previousValue is then set to el.value for future comparison.
+handler.call(this) instead of handler() makes sure the this keyword remains pointed at our overall object/ RegistrationForm
+Basically checks if the value of this.username has changed and runs usernameHandler() if it has. Ignores spaces, arrows etc.
+
+-----
+
+usernameHandler() - to display validation errors!
+Split into validation checks that run immediately usernameImmediately
+Then set a 3000ms timeout = property - this.username.timer
+so, usernameAfterDelay runs 3000ms after the keyup event but starts again if there's a keyup event in this.username. 
+we add it to a property so we can clear it by name.
+
+usernameImmediately checks value isn't empty runs reg ex to make sure it doesn't have non alphanumerical characters.
+if it doesn't it executes showValidationError passing along this.username field and an error message.
+
+showValidationError takes in el and message as parameters
+then sets the innerHTML of the next element afteer el/this.username = to 'message' - essentially adding the message to the alert pop up.
+also adds class of liveValidateMessage--visible
+
+el.errors is set to false initially and to true if we execute showValidationErrors
+in usernameImmediately we have if this.username.errors is false execute hideValidationError() passing in the element we're talking about.
+this.username for username field but will be different for password.
+
+if this.username.value is longer than 30 characters execute showValidationError.
+
+
+--------------
+
+Has username been taken: we use axios
+usernameAfterDelay() 
+if errors is set to false
+axios sends post request to /doesUsernameExist, sends data username: this.username.value
+
+doesUsernameExist will return a promise after checking db - so in the then method with response as argument, we say
+if response.data exists ie username exists - showValidationError(this.username and "message")
+
+in router we set up route for /doesUsernameExist which runs function userController.doesUsernameExist
+
+doesUsernameExist instantiates new User.findByUserName function, passing in req.body.username which is what the axios request sent along.
+findByUserName returns a promise.
+findByUserName resolves with the userDoc if it finds one
+so if it resolves the then() method runs and we send back res.json(true)
+if it doesn't resolve and the username doesn't exist we send back res.json(false)
+
+axios.post returns a promise, so we use then(response) 
+response is an object with loads of info about the HTTPrequest.
+response.data will either be res.json(true) or res.json(false) - not 100% why
+
+---------------
+
+Email field:
+same keyup event listener, 
+still execute isDifferent passing in the email field and handler function.
+runs this.emailHandler as long as value is different.
+
+this.emailHandler() if reg ex tests this.email.value 
+it evaluates to true if it's a valid email add, so we check for the opposite with an !.
+so if it isn't a valid email execute this.showValidationError()
+
+this.showValidationError() takes in the element you're on about and a message and sets errors on that element to true
+
+emailAfterDelay
+if errors are set to false on this.email send axios post request.
+route: /doesEmailExist
+data: this.email.value
+
+/doesEmailExist executes userController.doesEmailExist
+set variable emailBool to await User.doesEmailExist() as it returns promise with true or false.
+
+User.doesEmailExist() passing in req.body.email
+User.doesEmailExist() returns a new promise.
+if it's not a string then resolve with false and return to stop.
+
+we set variable user to await mongoDB findOne action on usersCollection where email field matches email we passed in from userController.
+
+then if(user) exists resolve with true because email exists
+else resolve with false because user variable would essentially be empty
+
+so emailBool is either true or false depending on where mongo found entry.
+'response' in the then() method of axios post request would then be emailBool
+so response.data is emailBool, if email exists it is set to true and:
+    this.email.isUnique = false
+    this.showValidationError(this.email, "That email is in use")
+is run.
+  else ->
+    this.email.isUnique = true
+    this.hideValidationError(this.email)
+
+so once we put in a real email this.hideValidationError(this.email) this hide alert from within emailAfterDelay()
+
+We prevent default behavior on form submit
+submit event executes formSubmitHandler
+formSubmitHandler manually runs all validation methods again
+
+if checks username and password are set to isUnique
+and errors are set to false
+then executes submit() method on form.

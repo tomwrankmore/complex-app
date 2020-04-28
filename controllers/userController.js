@@ -3,6 +3,20 @@ const User = require('../models/User')
 const Post = require('../models/Post')
 const Follow = require('../models/Follow')
 
+
+exports.doesUsernameExist = function(req, res) {
+  User.findByUserName(req.body.username).then(()=> {
+    res.json(true)
+  }).catch(()=>{
+    res.json(false)
+  })
+}
+
+exports.doesEmailExist = async function(req, res) {
+  let emailBool = await User.doesEmailExist(req.body.email)
+  res.json(emailBool) 
+}
+
 exports.sharedProfileData = async function(req, res, next) {
   let isVisitorsProfile = false
   let isFollowing = false
@@ -17,7 +31,20 @@ exports.sharedProfileData = async function(req, res, next) {
   //above adds onto req object with local variable which is true or false 
   req.isFollowing = isFollowing
   
-  next() 
+  //retrieve post follower and following counts
+  //profileUser is the current page profile username that's been fed through ifUserExists, findByUsername, so we can get it's id etc.
+  let postCountPromise = Post.countPostsByAuthor(req.profileUser._id)
+  let followerCountPromise = Follow.countFollowersByID(req.profileUser._id)
+  let followingCountPromise = Follow.countFollowingByID(req.profileUser._id)
+  let [postCount, followerCount, followingCount] = await Promise.all([postCountPromise, followerCountPromise, followingCountPromise])
+  //array destructuring
+  //Above creates three different variables from the values, and the first item will use the first value from the array that we are destructuring ie the Promise.all array.
+
+  req.postCount = postCount
+  req.followerCount = followerCount
+  req.followingCount = followingCount
+  
+  next()
 }
 
 exports.mustBeLoggedIn = function(req, res, next) {
@@ -95,9 +122,15 @@ exports.register = function(req, res) {
   //this runs prototype function in User.js which contains validate function
 }
 
-exports.home = function(req, res) {
+exports.home = async function(req, res) {
   if(req.session.user) {
-    res.render('home-dashboard')
+    // fetch feed of post for current user
+    //req.session.user._id comes from login function
+    let posts = await Post.getFeed(req.session.user._id)
+    res.render('home-dashboard', {
+      posts: posts, 
+      title: "Home"
+    })
     //used to have second argument to create property for reference in html templates, now we create user object for them in app.js
   } else {
     res.render('home-guest',{regErrors: req.flash('regErrors')})
@@ -114,32 +147,62 @@ exports.ifUserExists = function(req, res, next) {
   })
 }
 
+let upperUsername = function(username) {
+  let upperUsername = username.charAt(0).toUpperCase() + username.substring(1);
+  return upperUsername;
+} 
+
 exports.profilePostsScreen = function(req, res) {
   // ask our post model for posts by a certain author id
   Post.findByAuthorId(req.profileUser._id).then(function(posts){
-    console.log(req.profileUser)
+    //profileUser comes from login()
+    //console.log(req.profileUser)
     res.render('profile', {
+      currentPage: "posts",
+      title: `Profile for: ${upperUsername(req.profileUser.username)}`,
       posts: posts,
       profileUsername: req.profileUser.username,
       profileAvatar: req.profileUser.avatar,
       isFollowing: req.isFollowing,
-      isVisitorsProfile: req.isVisitorsProfile 
+      isVisitorsProfile: req.isVisitorsProfile,
+      counts: {postCount: req.postCount, followerCount: req.followerCount, followingCount: req.followingCount}
     })
   }).catch(function(){
     res.render('404')
   })
-
 }
 
 exports.profileFollowersScreen = async function(req, res) {
   try {
     let followers = await Follow.getFollowersById(req.profileUser._id)
     res.render('profile-followers', {
+      currentPage: "followers",
+      title: `${upperUsername(req.profileUser.username)}'s followers`,
       followers: followers,
       profileUsername: req.profileUser.username,
       profileAvatar: req.profileUser.avatar,
       isFollowing: req.isFollowing,
-      isVisitorsProfile: req.isVisitorsProfile 
+      isVisitorsProfile: req.isVisitorsProfile,
+      counts: {postCount: req.postCount, followerCount: req.followerCount, followingCount: req.followingCount}
+
+    })
+  } catch(e) {
+    res.render("404")
+  }
+}
+exports.profileFollowingScreen = async function(req, res) {
+  try {
+    let following = await Follow.getFollowingById(req.profileUser._id)
+    res.render('profile-following', {
+      currentPage: "following",
+      title: `${upperUsername(req.profileUser.username)} is following`,
+      following: following,
+      profileUsername: req.profileUser.username,
+      profileAvatar: req.profileUser.avatar,
+      isFollowing: req.isFollowing,
+      isVisitorsProfile: req.isVisitorsProfile,
+      counts: {postCount: req.postCount, followerCount: req.followerCount, followingCount: req.followingCount}
+
     })
   } catch(e) {
     res.render("404")

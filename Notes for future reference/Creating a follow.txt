@@ -1,0 +1,21 @@
+When we create a follow document in the follows collection, there is an authorId field which is the id of the logged in user and a followedId which is the id of the profile user whose page we call the follow function from.
+
+Therefore when finding a list of followers we run agg operations on mongo to find follow documents where followedId is the same as req.profileUser._id/'id', because that would return all the documents where the user id shows up as one of the profiles that has been followed.
+
+When finding a list of following, we look for documents where the profile id matches the authorId.
+
+Let me just define what req.profileUser._id is.
+ifUserExists calls User.findByUserName passing along (req.params.username) as 'username'
+findByUserName runs findOne method on usersCollection to find a document that matches username with username field in database, if it resolves then it passes the whole document into function as 'userDoc'
+reducedUserDoc new instance of User, passing in userDoc, just to get avatar I think.
+We strip down reducedUserDoc to three properties:
+          _id: reducedUserDoc.data._id,
+          username: reducedUserDoc.data.username,
+          avatar: reducedUserDoc.avatar
+
+Resolve with 'reducedUserDoc' ie. pass reducedUserDoc back to userController.ifUserExists
+in the .then userDocument is passed, which is === reducedUserDoc
+Then we create a property on the req object called profileUser = userDocument
+
+
+Long story short: req.profileUser is a user document based on the username in the url bar on a profile page.

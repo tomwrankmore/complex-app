@@ -1,0 +1,27 @@
+profileUser COMES FROM IFUSEREXISTS FUNCTION!!!
+profileUsername comes from userController.profilePostsScreen
+profileUsername: req.profileUser.username
+
+The route is /profile/:username/following in router.js
+
+this calls function userController.profileFollowingScreen
+
+Set up 'following' variable to contain Follow.getFollowingById which returns a list of users and avatars
+
+followedId & authorId are inserted into followsCollection in create function.
+ authorIdis the logged in user followedId is is the id of the current profile user
+
+Follow.getFollowingById recieves req.profileUser._id as 'id' & returns a promise that 'tries' aggregate operations on mongodb followsCollection, imported on line 2. 
+It finds documents where authorId is the same as id being passed in.
+Finds documents in the follow collection where where the authorId/logged in user id matches the current profile user 
+
+So we're finding follow documents where the current user is the creator of that follow, then we look up information about the document in the 'users' collection that they are following, ie use the followedId to access users so you can get username avatar etc.
+
+I DONT GET THIS, GO OVER IT AGAIN.
+
+
+
+profileUser COMES FROM IFUSEREXISTS FUNCTION!!!
+
+
+

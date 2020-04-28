@@ -97,8 +97,6 @@ User.prototype.getAvatar = function() {
   this.avatar = `https://gravatar.com/avatar/${md5(this.data.email)}?s=128`
 }
 
-
-
 User.findByUserName = function(username) {
   return new Promise(function(resolve, reject) {
     if(typeof(username) != "string"){
@@ -111,7 +109,7 @@ User.findByUserName = function(username) {
         reducedUserDoc = {
           _id: reducedUserDoc.data._id,
           username: reducedUserDoc.data.username,
-          avatar: reducedUserDoc.avatar//avatar is part of the User blueprint, not the incoming dats from userDoc, so it doesn't need .data in it
+          avatar: reducedUserDoc.avatar//avatar is part of the User blueprint, not the incoming data from userDoc, so it doesn't need .data in it
         }
         //we could have just resolved with entire user document but we restricted what gets send by feeding in data to User blueprint assiging these key value pairs. Not password etc.
         resolve(reducedUserDoc)
@@ -121,6 +119,22 @@ User.findByUserName = function(username) {
     }).catch(function(){
       reject()
     })
+  })
+}
+
+User.doesEmailExist = function(email) {
+  return new Promise(async function(resolve, reject) {
+    if(typeof(email) != "string") {
+      resolve(false)
+      return
+    }
+
+    let user = await usersCollection.findOne({email: email})
+    if(user) {
+      resolve(true)
+    } else {
+      resolve(false)
+    }
   })
 }
 

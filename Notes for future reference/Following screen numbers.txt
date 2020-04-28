@@ -1,0 +1,46 @@
+userController.sharedProfileData
+
+All three profile based routes call this function.
+/profile/:username
+/profile/:username/followers
+/profile/:username/following
+
+postCountPromise calls Post.countPostsByAuthor 
+followerCountPromise calls Post.countFollowersById
+followerCountPromise calls Post.countFollowingById
+which all return promises, they run at the same time. 
+We use await Promise.all([all of the promises]) 
+
+We are waiting for ALL of the them to resolve in whatever order.
+The promise.all method returns an array, in the order they're written of the values that each on of the promises resolve with.
+
+Instead of setting up new variables to == each element of the array like:
+  let results = await Promise.all([postCountPromise, followerCountPromise, followerCountPromise])
+  let postCount = results[0]
+  let followerCount = results[1]
+We use array destructuring, 
+  let [postCount, followerCount, followingCount] = await Promise.all([postCountPromise, followerCountPromise, followerCountPromise])
+First value uses first value from array that we're destructuring, second value uses second value etc...
+
+Then we add variables onto req object:
+  req.postCount = postCount etc
+
+PROMISES:
+We pass in req.profileUser._id to each of the Post.promises
+Remember profile user is a user doc based on the :username in the url of the profile page, which contains user id + avatar etc. The process originates from userController.ifUserExists function
+
+Post.countPostsByAuthor
+returns promise with resolve and reject
+set postCount variable to equal mongodb method countDocuments on postsCollection
+So for posts we look for docs where the author field matches id/req.profileUser._id
+Resolve with postCount variable which will be number of docs we found.
+
+Post.countFollowersById
+All the same as above but we work with followsCollection 
+And we look for docs where authorId = id/req.profileUser._id
+
+Post.countFollowingById
+All the same as above but we work with followsCollection 
+And we look for docs where followedId = id/req.profileUser._id
+
+add these values onto req object, so they can be referenced in profilePostsScreen function to be displayed in ejs template. profileShared.ejs 

@@ -1,0 +1,25 @@
+userController home function
+We create variable called posts which runs getFeed function 
+
+getfeed function
+takes in id as argument from within home function in userController
+
+then sets followedUsers to mongo operation 'find' docs where authorId is the same as id/ie. req.session.user._id/logged in user's id. So that's all the follow docs that the logged in user has created. 
+
+Then we convert .toArray() 
+Then use map method on followedUsers, passing in followDoc as current indexed item, then return followDoc.followedId from inside each of the followDocs.
+Remember map returns new array. 
+
+So the new array returned is just the followedId fields from all docs in the followsCollection that the logged in user created.
+
+reusablePostQuery() is going to look up the user's user name and figure out their gravatar.
+Agg operation we pass in: {$match: {author: {$in: followedUsers}}}
+This is saying: find any post doc where author value is in our array of followedUsers. reusablePostQuery resolves with 'posts'.
+We make posts available to profile.ejs in home function
+.
+So here posts represents an array of posts where the author field is in followedUsers array.
+  Initially we find all follows created by our logged in user
+  then run map on that array to return only returning the followedId fields as array items
+
+then we run reusablePostQuery to find posts that are created by author's the same as id's in followedUsers array.
+

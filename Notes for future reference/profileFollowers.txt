@@ -1,0 +1,24 @@
+profileUsername comes from userController.profilePostsScreen
+
+The route is /profile/:username/followers in router.js
+runs userController.profileFollowersScreen
+profileUsername: req.profileUser.username
+
+Set up 'followers' variable as new instance of Follow.getFollowersById passing req.profileUser._id which returns a list of users and avatars.
+
+Follow.getFollowersById recieves req.profileUser._id as 'id' & returns a promise that 'tries' aggregate mongodb operations on followsCollection, imported on line 2. 
+AuthorId = id of logged in user who clicked follow
+FollowedId = id of user they followed
+So to find a users followers, look for documents match where followedID(id of the current profile user, from create function) is the same as passed in 'id'
+
+Converts agregated data to array
+We map that array to 'followers' with 'follower' as current item, then on each follower item in array we creat new User, with follower as it's paramer which is the 'data' User.js uses to get avatar and user name etc.
+Then we resolve with followers array to be used in .profilePostsScreen
+
+profileUser COMES FROM IFUSEREXISTS FUNCTION!!!
+
+How does ejs template have access to posts variable again?
+when you res.render from userController.profileFollowersScreen you pass in an object as the second argument including properties from the funtion ie. profileUsername: req.profileUser.username
+
+
+Therefore when finding a list of followers we run agg operations on mongo to find follow documents where followedId is the same as req.profileUser._id/'id', because that would return all the documents where the user id shows up as one of the profiles that has been followed.

@@ -11,10 +11,15 @@ router.post('/register', userController.register)
 //post request from router runs register function from userController.js
 router.post('/login', userController.login)
 router.post('/logout', userController.logout)
+router.post('/doesUsernameExist', userController.doesUsernameExist)
+router.post('/doesEmailExist', userController.doesEmailExist)
 
 //Profile related routes
 router.get('/profile/:username', userController.ifUserExists, userController.sharedProfileData, userController.profilePostsScreen)
+
 router.get('/profile/:username/followers', userController.ifUserExists, userController.sharedProfileData, userController.profileFollowersScreen)
+
+router.get('/profile/:username/following', userController.ifUserExists, userController.sharedProfileData, userController.profileFollowingScreen)
 
 //Post related routes
 router.get('/create-post', userController.mustBeLoggedIn, postController.viewCreateScreen)

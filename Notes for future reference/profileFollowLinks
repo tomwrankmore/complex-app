@@ -1,4 +1,0 @@
-profileUsername comes from userController.profilePostsScreen
-
-profileUsername: req.profileUser.username
-

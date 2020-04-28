@@ -17,7 +17,7 @@ Follow.prototype.validate = async function(action) {
   // followed usernam must exist in database
   let followedAccount = await usersCollection.findOne({username: this.followedUsername})
   if(followedAccount){
-    this.followedId = followedAccount._id
+    this.followedId = followedAccount._id 
   } else {
     this.errors.push("You cannot follow a user that does not exist")
   } 
@@ -96,6 +96,43 @@ Follow.getFollowersById = function(id) {
     } catch (e) {
       reject()
     }
+  })
+}
+
+Follow.getFollowingById = function(id) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let followers = await followsCollection.aggregate([
+        {$match: {authorId: id}},//authorId == visitorId from app.js. 
+        {$lookup: {from: "users", localField: "followedId", foreignField: "_id", as: "userDoc"}},
+        {$project: {
+          username: {$arrayElemAt: ["$userDoc.username", 0]},
+          email: {$arrayElemAt: ["$userDoc.email", 0]}
+        }}
+      ]).toArray()
+      followers = followers.map(function(follower){
+        // create a user
+        let user = new User(follower, true)
+        return {username: follower.username, avatar: user.avatar}
+      })
+      resolve(followers)
+    } catch (e) {
+      reject()
+    }
+  })
+}
+
+Follow.countFollowersByID = function(id) {
+  return new Promise(async(resolve, reject) => {
+    let followCount = await followsCollection.countDocuments({followedId: id})
+    resolve(followCount)
+  })
+}
+
+Follow.countFollowingByID = function(id) {
+  return new Promise(async(resolve, reject) => {
+    let followingCount = await followsCollection.countDocuments({authorId: id})
+    resolve(followingCount)
   })
 }
 

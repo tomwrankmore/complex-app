@@ -1,0 +1,119 @@
+In footer we add an if statement to check if user is logged in.
+Create chat.js in the frontend folder.
+export class Chat for main.js
+in main.js if statement to only run Chat if chat wrapper exist ie user is logged in.
+
+we select chatwrapper div in constructor 
+then an injectHTML method that plops the chat form in there.
+
+showChat() adds visible class to chatWrapper
+we set openedYet = false initially
+in showChat() we say if that is set to false then run openConnection()
+that way it only runs once. then we set openedYet = true.
+hideChat() removes visible class
+
+We use a socket connection between the browser and the server instead of a traditional http request responce with Axios
+
+--------------------
+
+Socket.io
+
+Previously our server was just an express application, it only served our express app. We now need the server to power Socket connections.
+
+In app.js we changed module.exports = app which exported our express server to our db.js to: 
+const server = require('http').createServer(app)
+'http' package is included in Node.js by default
+this creates a server that uses our express app as it's handler.
+
+then we export server not app, app lives inside server variable.
+
+We add in Socket functionality to this server with:
+const io = require('socket.io')(server)
+
+db now tells server to start listening on port 3000, not just app, ie it includes socket stuff.
+
+Front end can run Socket.io script because we include socket.io.js script in footer.
+
+-----------------
+
+Then to chat.js.
+openConnection() calls io() method from script in footer.
+openConnection() is what creates the connection between browser and server
+so this.socket = io() is heard by io.on('connection' in app.js and runs it's function.
+
+We store it in Chat class as this.socket
+io() creates the connection between our browser and our server.
+so I guess when in a method in a class setting io() to property executes the function.
+------------------  
+
+Set up eventListener for chatForm for submit, then function prevents default so it doesn't reload then calls sendMessageToServer()
+sendMessageToServer() call this.socket, variable set up in openConnection()
+it calls this.socket.emit() method
+First argument is custom name that describes this type of event
+Second argument is an object with any data we want to send to the server.
+So we pull the value from what the user has entered into text field: {message: this.chatField.value}
+Then we clear the this.chatField.value
+Then focus it.
+
+In app.js we tell the server what to do when it recieves a request from chatMessageFromBrowser
+
+back in app.js in io.on(connection) the socket parameter that represents the connection between browser and server.
+socket.on listens for chatMessageFromBrowser then runs function with 'data' as parameter which is the data sendMessageToServer passed along with chatMessageFromBrowser in chat.js
+
+this then broadcast.emit s this under the name: 'chatMessageFromServer' along with object including message and username data.
+
+Any browser that has openConnection() function running  receives emissions from chatMessageFromServer and runs displayMessageFromServer(data)passing along the data object to be placed in HTML dynamically. 
+
+within the displayMessageFromServer method we select chatLog and insert HTML.
+
+messages that come in from server/app.js/chatMessageFromServer will use template for chat from others.
+our own message is inserted into directly into the dom when we type it as well as being sent to server in sendMessageToServer()
+We insert this HTML using chat-self template. This is how it's styled on left and right.
+
+--------------------
+
+
+
+--------------------
+
+
+Data journey:
+Click chat icon - runs openConnection function
+on connection in app.js we grab 'user' object from the socket.request.session.user
+io.use is where we make our session data available to socket.
+
+
+we emit 'welcome' along with object including username and avatar of the user typing
+
+in chat.js in openConnection it listens for 'welcome' and creates properties for username + avatar from data passed by welcome. this.username = data.username + this.avatar = data.avatar
+
+on chatForm submit event we run sendMessageToServer
+sendMessageToServer emits chatMessageFromBrowser along with value from chat window.
+
+in app.js in connection function listens for chatMessageFromBrowser
+runs function with chat window value as 'data'
+
+then broadcast emits that as chatMessageFromServer along with object of the message + username + avatar for any connected users.
+
+chatMessageFromServer is received in openConnection() function. on chatMessageFromServer it runs function with 'data' as parameter which in turn executes displayMessageFromServer(data)
+*reminder data is the message along with usernam + avatar.
+
+displayMessageFromServer inserts HTML into chatLog/#chat div with termplate of messages from others.
+including dynamic data. data.message data.username
+
+socket.broadcast emits event to any and all connected browsers except the socket connection that sent it.
+when you send a message the server is going to send it to any and all connected browsers apart from your. So we need to insert the value into the chatLog from within the DOM.
+
+the username and avatar properties are available from the welcome emission.
+
+in chat.js - sendMessageToServer
+we insert HTML into chatLog 
+we insert the template of chat-self and insert this.chatField.value straight back in.
+avatar is available via this.avatar from openConnection
+
+When we send message to server we also tell chatLog div to scroll to the bottom with:
+this.chatLog.scrollTop = this.chatLog.scrollHeight
+Also add same functionality to displayMessageFromServer.
+
+Lastly we sanitizeHTML in chatMessageFromServer in app.js
+and DOMPurify the code we send from sendMessageToServer

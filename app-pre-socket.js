@@ -5,7 +5,7 @@ const flash = require('connect-flash')
 const markdown = require('marked')
 const sanitizeHTML = require('sanitize-html')
 const app = express()
- 
+
 let sessionOptions = session({
   secret: "Javascript is cool",
   store: new MongoStore({client: require('./db')}),
@@ -35,8 +35,6 @@ app.use(function(req, res, next) {
   if(req.session.user) {req.visitorId = req.session.user._id} else {req.visitorId = 0}
 
   // make user session data available from within view templates
-  //WHERE DOES USER OBJECT COME FROM?
-  // It comes from userController.login()
   res.locals.user = req.session.user
   next()
 })
@@ -68,36 +66,7 @@ app.use('/', router)
 
 // app.listen(3000)
 
-const server = require('http').createServer(app)
-// http package is included in Node.js by default
-// this creates a server that uses our express app as it's handler.
 
-const io = require('socket.io')(server)
-// this adds socket functionality to our server
 
-io.use(function(socket, next) {
-  sessionOptions(socket.request, socket.request.res, next)
-})
-// This is making our express session data available from within the context of socket io.
-
-//event that we are listening for is connection
-//function is what we wanna do in response.
-// socket parameter represents the connection between browser and server, kind of like req?
-
-io.on('connection', function(socket) {
-  if(socket.request.session.user) {
-    //only is user is logged in.
-    //user object is on the req sessions from login function i think.
-    let user = socket.request.session.user
-
-    socket.emit('welcome', {username: user.username, avatar: user.avatar})
-
-    socket.on('chatMessageFromBrowser', function(data) {
-
-      socket.broadcast.emit('chatMessageFromServer', {message: sanitizeHTML(data.message, {allowedTags: [], allowedAttributes: {}}), username: user.username, avatar: user.avatar})
-    })
-  }
-})
-
-module.exports = server
+module.exports = app
 //now we just export this as a module that's required in on db.js.

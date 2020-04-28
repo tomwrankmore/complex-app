@@ -1,7 +1,7 @@
 const Post = require('../models/Post')
 
 exports.viewCreateScreen = function(req, res) {
-  res.render('create-post')
+  res.render('create-post', {title: "Create new post"})
 }
 
 exports.create = function(req, res) {
@@ -18,7 +18,7 @@ exports.create = function(req, res) {
 exports.viewSingle = async function(req, res) {
   try {
     let post = await Post.findSingleById(req.params.id, req.visitorId)//visitorId comes from app.js
-    res.render('single-post-screen', {post: post})//post comes from promise resolution, now stored as property for html template
+    res.render('single-post-screen', {post: post, title: post.title})//post comes from promise resolution, now stored as property for html template
   } catch (err) {
     res.render('404')
   }
