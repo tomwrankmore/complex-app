@@ -1,0 +1,108 @@
+Exposing the data and functionality of our app in a way that is decoupled from HTML cookies & the web browser environment in general.
+Raw data.
+
+We test our API by sending requests from Postman
+
+So you make a post request on http://localhost:3000/api/login 
+Passing along json data including username and password.
+{
+  "username" : "eliphino",
+  "password" : "qwertyuiop"
+}
+
+router-api listens for requests on /api/
+runs functions from userController.
+
+Create new router-api.js
+
+Every time you see app.use that's going to run those functions for EVERY route, (every route listed below those app.use lines.)
+    app.use('/api', require('./router-api'))
+Tells express to use this router for the /api route.
+
+Create router-api.js -- now we can make requests to /api
+We require in all the controllers.
+run apiLogin() function from userController
+
+apiLogin() duplicates login()
+remove sessions - remove flash messages - remove redirect
+
+-----------------
+
+ when the API sends a post request to /api/login we send back web token
+require in jsonwebtoken package in userController.js
+
+apiLogin runs login function to check credentials against mongo db. if it's correct, we send back 
+res.json(jwt.sign({_id: user.data._id}, process.env.JTWSECRET, {}))
+in the response we include 
+1)_id: user.data._id which comes from user.login function.
+2)add secret phrase in .env
+3) options for expiration
+
+So we send back a web token with user ID, JTW Secret phrase from env and options for expiration.
+
+Send POST request to http://localhost:3000/api/login
+with json data 
+{
+	"username": "eliphino",
+	"password": "qwertyuiop"
+}
+And you'll get a token in response.
+-------------------
+/api/create-post
+
+send along json data of title, body, token.
+create route, run apiMustBeLoggedIn, then apiCreate.
+in apiMustBeLoggedIn we execute jwt.verify()
+pass in the token, req.body.token which comes from the json data passed with the request.
+verify checks it is a token that was created by our server.
+Second argument is our secret phrase.
+
+If the verify method determines that this is a valid token that our server generated.
+It's going to return the payload of data that's stored in the token. ie. {_id}
+
+Create req.apiUser variable to store what verify returns ie. {_id}
+execute next()
+req.apiUser is then available to the next function.
+
+---------------------
+
+postController.apiCreate
+duplicate create function
+in new instance of Post we now pass in req.apiUser._id 
+remove flash and redirects
+respond back with json("Congrats")
+
+How would you add in new id of the post that was just created in response?
+
+In the catch area of the apiCreate function we respond with the array of errors that our Post model provides, so if we miss out on title, it responds with tha t.
+
+HOW DOES API GET ACCESS TO THE TOKEN TO PASS ALONG.
+The server sends back this token, then the API uses it, but WHERE DOES IT STORE IT?
+This is maybe down to the app developer using the API  to decide. All we have to do is send it back.
+
+------------------
+
+delete request type to
+http://localhost:3000/api/post/5e7a3953a5619e0936b95adc
+json to send:
+{
+  "token" : ""
+}
+
+make route for /api/post/:id
+executes function postController.apiDelete
+executes Post.delete with params.id ie id that comes from request url 
+and apiUser._id which comes from userController.apiMustBeLoggedIn
+
+Good to have delete function in Post because it takes care of validation checks permission checks and business logic. Delete takes in the id of the logged in user and the id of the post to delete and checks they're allowed.
+
+-----------
+
+publicly available request
+get request to 
+/api/postsByAuthor/eliphino
+executes userController.apiGetPostsByUsername
+authorDoc is set to User.findByUserName which returns user document includinng ID
+then executes findByAuthorId passing in authorDoc._id
+findByAuthorId runs reusablePostQuery which returns an array of posts
+We send back those poste like: res.json(posts)

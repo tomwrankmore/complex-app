@@ -3,9 +3,20 @@ const session = require('express-session')
 const MongoStore = require('connect-mongo')(session)
 const flash = require('connect-flash')
 const markdown = require('marked')
+const csrf = require('csurf')
 const sanitizeHTML = require('sanitize-html')
 const app = express()
- 
+
+app.use(express.urlencoded({extended:false}))
+//tells express to add user submitted data onto request object :)
+app.use(express.json())
+//tells express to accept and send json
+//express is now able to read incoming body request data and json data
+
+// API Route
+app.use('/api', require('./router-api'))
+//use this router for the /api route.
+
 let sessionOptions = session({
   secret: "Javascript is cool",
   store: new MongoStore({client: require('./db')}),
@@ -47,11 +58,6 @@ app.use(function(req, res, next) {
 const router = require('./router')//pulls in and runs router.js  
 //previously we had app.get to send back html template, now this happens in router.js using Router which is like a mini application from with Express 
 
-app.use(express.urlencoded({extended:false}))
-//tells express to add user submitted data onto request object :)
-app.use(express.json())
-//tells express to accept and send json
-
 app.use(express.static('public'))
 //this sets the public folder as the root to serve up static files.
 
@@ -63,8 +69,29 @@ app.set('views', 'views')
 app.set('view engine', 'ejs')
 //we are using ejs engine. alternatives: handlebars and moustache
 
+app.use(csrf())
+// the csurf package demands a csrf Token on any post request now.
+
+app.use(function(req,res,next){
+  res.locals.csrfToken = req.csrfToken()
+  // this contains token value to be outputted to HTML template.
+  // the function csrfToken() from the packag generates the token
+  next()
+})
+
 app.use('/', router)
 //this tells express that for home directory, use router.js which contains get request and html function.
+
+app.use(function(err,req,res,next){
+  if(err) {
+    if(err.code == "EBADCSRFTOKEN") {
+      req.flash('errors', "Cross site reques t forgery detected.")
+      req.session.save(()=>res.redirect('/'))
+    }
+  } else {
+    res.render("404")
+  }
+})
 
 // app.listen(3000)
 
