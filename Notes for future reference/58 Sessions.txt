@@ -1,0 +1,40 @@
+express-session
+
+you enable sessions in app.js
+
+set up config options in the object when we call session object and set it to sessionOptions variable
+
+then app.use(sessionOptions), meaning it runs on every request.
+
+In login function we leverage session by adding properties to the req.session object, ie .user
+
+When we write req.session this uses the session package I think, adds on a property per browser visit. 
+
+The req.session object is unique per browser visitor
+The whole idea of a session is so we can save data from one request to another.ie. save the username of the person who just logged in so you can create logic based on who's logged in.
+
+It's done per server. Firefox wouldn't know you were logged in. 
+
+------------
+
+Leveraging the session object, tells the serve to store the object in memory.
+AND 
+Send instructions to web browser to create a cookie
+Then with every request, the server sends that cookie and it's value back to the node server, proving it's identity and giving it access to previoius log ins etc
+
+Every time we make a change and restart the node server we loose the session data though so we want to save it in the database.
+
+
+------
+
+To save it to database we use connect-mongo
+Then modify session config options and tell it to store session info in mongoDB
+Look for MongoStore in app.js
+we pass in session to mongostore 
+We override session default saving to memory and get it to use new MongoStore in the session config:
+
+store: new MongoStore({client: require('./db')}),
+
+in the collections area of mongoDB you will see the sessions object with whatever we specified in the log in function,.
+Unique session identifier is stored as _id in mongo db
+All that gets stored in the cookie is the unique session identifier, and the user object is now stored on the database.

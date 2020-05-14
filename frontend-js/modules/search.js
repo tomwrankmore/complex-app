@@ -29,7 +29,6 @@ export default class Search {
   }
 
   // 3. Methods
-
   keyPressHandler() {
     let value = this.inputField.value
     if (value ==  "") {

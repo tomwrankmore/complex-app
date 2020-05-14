@@ -1,0 +1,13 @@
+Router.js contains our get requests but we store our functions in a Controller.
+
+so get requests call functions that live in a separate file
+
+MVC
+
+Model - where we would include all the business logic, all the rules we want to enforce on our data. 
+EG user's username must be unique, other validation. Essentially where we 'model' our incoming data.
+
+View - HTML template - view files.
+
+Controller - responsibility is to accept input, ie network requests to our different routes. Controller is the middleman, depending on the incoming request the controller will call the appropriate model, with the rules we want to apply to our data
+ie search for post return updated post, then controller will pass this to the appropriate view and pass it any relevant dynamic data from the model.

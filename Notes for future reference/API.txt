@@ -1,0 +1,29 @@
+Instruction for API
+
+To log in send request to 
+https://complex-blog-app.herokuapp.com/api/login
+with JSON data:
+{
+  "username": "*********",
+  "password": "**********"
+}
+
+To create post send request to 
+https://complex-blog-app.herokuapp.com/api/create-post
+with JSON data:
+{
+  "title": "*********",
+  "body": "**********",
+  "token: "*******************"
+}
+
+To delete post send DELETE request to 
+https://complex-blog-app.herokuapp.com/post/:id
+with JSON data:
+{
+  "token: "*******************"
+}
+
+To view publicly available posts send GET request to 
+https://complex-blog-app.herokuapp.com/api/postsByAuthor/username
+with no JSON data:
